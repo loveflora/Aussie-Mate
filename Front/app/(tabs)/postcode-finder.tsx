@@ -7,47 +7,79 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import vicGeoJson from '../../assets/data/vic-postcodes.json';
 
 
-// 워홀 417 적격 우편번호 데이터
-const whv417Postcodes = {
+// 워홀 417 지역 적격 우편번호 데이터
+const whv417PostcodesRegional = {
   singlePostcodes: [3139, 3753, 3756, 3758, 3762, 3764, 3979],
   ranges: [
     { start: 3211, end: 3334 },
     { start: 3340, end: 3424 },
     { start: 3430, end: 3649 },
     { start: 3658, end: 3749 },
+    { start: 3778, end: 3781 },
     { start: 3810, end: 3909 },
     { start: 3921, end: 3925 },
     { start: 3945, end: 3974 },
-    { start: 3981, end: 3996 }
+    { start: 3979, end: 3996 }
+  ]
+};
+
+// 워홀 417 리모트 적격 우편번호 데이터
+const whv417PostcodesRemote = {
+  singlePostcodes: [3424, 3506, 3509, 3512],
+  ranges: [
+    { start: 3889, end: 3892 },
   ]
 };
 
 // 491 비자 적격 우편번호 데이터
 const visa491Postcodes = {
-  singlePostcodes: [3097, 3098, 3099, 3139, 3233, 3234, 3235, 3236, 3237, 3238, 3239, 3240, 3328, 3329, 3334, 3340, 3341, 3342, 3978],
+  singlePostcodes: [3139, 3329, 3334, 3341, 3235, 3240, 3328],
   ranges: [
-    { start: 3211, end: 3232 },
+    { start: 3097, end: 3099 },
+    { start: 3233, end: 3234 },
+    { start: 3236, end: 3239 },
     { start: 3241, end: 3325 },
-    { start: 3330, end: 3333 },
     { start: 3345, end: 3424 },
     { start: 3430, end: 3799 },
     { start: 3809, end: 3909 },
     { start: 3912, end: 3971 },
-    { start: 3978, end: 3996 }
+    { start: 3978, end: 3996 },
+    { start: 3211, end: 3232 },
+    { start: 3330, end: 3333 },
+    { start: 3340, end: 3342 },
   ]
 };
 
-// 우편번호가 적격인지 확인하는 함수
-const isEligiblePostcode = (postcode) => {
+// 우편번호가 워홀 417 Regional 적격인지 확인하는 함수
+const checkWhv417RegionalEligibility = (postcode) => {
   const postcodeNum = parseInt(postcode, 10);
   
   // 단일 우편번호 확인
-  if (whv417Postcodes.singlePostcodes.includes(postcodeNum)) {
+  if (whv417PostcodesRegional.singlePostcodes.includes(postcodeNum)) {
     return true;
   }
   
   // 범위 확인
-  for (const range of whv417Postcodes.ranges) {
+  for (const range of whv417PostcodesRegional.ranges) {
+    if (postcodeNum >= range.start && postcodeNum <= range.end) {
+      return true;
+    }
+  }
+  
+  return false;
+};
+
+// 우편번호가 워홀 417 Remote 적격인지 확인하는 함수
+const checkWhv417RemoteEligibility = (postcode) => {
+  const postcodeNum = parseInt(postcode, 10);
+  
+  // 단일 우편번호 확인
+  if (whv417PostcodesRemote.singlePostcodes.includes(postcodeNum)) {
+    return true;
+  }
+  
+  // 범위 확인
+  for (const range of whv417PostcodesRemote.ranges) {
     if (postcodeNum >= range.start && postcodeNum <= range.end) {
       return true;
     }
@@ -57,7 +89,7 @@ const isEligiblePostcode = (postcode) => {
 };
 
 // 491 비자 적격 여부 확인 함수
-const is491Eligible = (postcodeStr) => {
+const check491Eligibility = (postcodeStr) => {
   const postcode = parseInt(postcodeStr);
   
   // 단일 우편번호 확인
@@ -78,14 +110,11 @@ const is491Eligible = (postcodeStr) => {
 // 비자 필터 타입 정의
 const VISA_FILTER = {
   ALL: 'all',
-  WHV_417: 'whv417',
+  WHV_417_REGIONAL: 'whv417regional',
+  WHV_417_REMOTE: 'whv417remote',
   VISA_491: 'visa491', // 통합된 491 비자 필터
   BOTH: 'both',        // 두 비자 모두 적격
 };
-
-// 지역 폴리곤 색상 정의
-const WHV_417_COLOR = 'rgba(76, 175, 80, 0.5)'; // 워홀 417 - 녹색
-const VISA_491_COLOR = 'rgba(33, 150, 243, 0.5)'; // 491 비자 - 파란색 (통합)
 
 // 빅토리아 지역 중심점 좌표
 const VICTORIA_REGION = {
@@ -148,306 +177,8 @@ const SAMPLE_POSTCODES = [
 ];
 
 // 우편번호 범위에 대응하는 대략적인 지리적 영역 폴리곤 (시각적 표현용)
-const regionPolygons = [
-  {
-    name: "Victoria Central (3211-3334)",
-    color: WHV_417_COLOR,
-    strokeColor: "rgba(76, 175, 80, 0.8)",
-    coordinates: [
-      { latitude: -37.2412, longitude: 143.8710 },
-      { latitude: -37.7311, longitude: 144.2053 },
-      { latitude: -38.0876, longitude: 143.9483 },
-      { latitude: -38.5228, longitude: 142.8717 },
-      { latitude: -38.2551, longitude: 141.6097 },
-      { latitude: -37.7975, longitude: 141.3527 },
-      { latitude: -37.0538, longitude: 142.2313 },
-      { latitude: -37.2412, longitude: 143.8710 }
-    ],
-    visaType: VISA_FILTER.WHV_417
-  },
-  {
-    name: "Yandernoib Valley (3139)",
-    color: WHV_417_COLOR,
-    strokeColor: "rgba(76, 175, 80, 0.8)",
-    coordinates: [
-      { latitude: -37.7368, longitude: 145.3680 },
-      { latitude: -37.7611, longitude: 145.4425 },
-      { latitude: -37.8020, longitude: 145.4325 },
-      { latitude: -37.8100, longitude: 145.3825 },
-      { latitude: -37.7768, longitude: 145.3625 },
-      { latitude: -37.7368, longitude: 145.3680 }
-    ],
-    visaType: VISA_FILTER.WHV_417
-  },
-  {
-    name: "Victoria North (3340-3424, 3430-3649)",
-    color: WHV_417_COLOR,
-    strokeColor: "rgba(76, 175, 80, 0.8)",
-    coordinates: [
-      { latitude: -36.0782, longitude: 144.7317 },
-      { latitude: -35.9957, longitude: 146.0974 },
-      { latitude: -36.3731, longitude: 146.9761 },
-      { latitude: -37.0950, longitude: 146.5381 },
-      { latitude: -37.2687, longitude: 145.5652 },
-      { latitude: -37.4425, longitude: 144.6864 },
-      { latitude: -37.0538, longitude: 143.9114 },
-      { latitude: -36.3731, longitude: 144.3493 },
-      { latitude: -36.0782, longitude: 144.7317 }
-    ],
-    visaType: VISA_FILTER.WHV_417
-  },
-  {
-    name: "Victoria North East (3658-3749)",
-    color: WHV_417_COLOR,
-    strokeColor: "rgba(76, 175, 80, 0.8)",
-    coordinates: [
-      { latitude: -36.3731, longitude: 146.9761 },
-      { latitude: -36.0232, longitude: 147.8548 },
-      { latitude: -36.2657, longitude: 148.5241 },
-      { latitude: -37.0125, longitude: 148.1417 },
-      { latitude: -37.4150, longitude: 147.4087 },
-      { latitude: -37.0950, longitude: 146.5381 },
-      { latitude: -36.3731, longitude: 146.9761 }
-    ],
-    visaType: VISA_FILTER.WHV_417
-  },
-  {
-    name: "Yarra Ranges (3753, 3756, 3758, 3762, 3764)",
-    color: WHV_417_COLOR,
-    strokeColor: "rgba(76, 175, 80, 0.8)",
-    coordinates: [
-      { latitude: -37.5547, longitude: 145.5093 },
-      { latitude: -37.4812, longitude: 145.9173 },
-      { latitude: -37.6850, longitude: 146.0285 },
-      { latitude: -37.7585, longitude: 145.6205 },
-      { latitude: -37.5547, longitude: 145.5093 }
-    ],
-    visaType: VISA_FILTER.WHV_417
-  },
-  {
-    name: "Western Gippsland (3810-3820)",
-    color: WHV_417_COLOR,
-    strokeColor: "rgba(76, 175, 80, 0.8)",
-    coordinates: [
-      { latitude: -38.0350, longitude: 145.4480 }, // 파킨헴(3810) 중심
-      { latitude: -38.0150, longitude: 145.7200 },
-      { latitude: -38.1800, longitude: 145.7500 },
-      { latitude: -38.2400, longitude: 145.5500 },
-      { latitude: -38.1500, longitude: 145.3700 },
-      { latitude: -38.0350, longitude: 145.4480 }
-    ],
-    visaType: VISA_FILTER.WHV_417
-  },
-  {
-    name: "Gippsland (3821-3909, 3844)",
-    color: WHV_417_COLOR,
-    strokeColor: "rgba(76, 175, 80, 0.8)",
-    coordinates: [
-      { latitude: -37.4150, longitude: 147.4087 },
-      { latitude: -37.0125, longitude: 148.1417 },
-      { latitude: -37.2412, longitude: 149.5074 },
-      { latitude: -37.9771, longitude: 149.7644 },
-      { latitude: -38.5777, longitude: 148.5241 },
-      { latitude: -38.3946, longitude: 147.1517 },
-      { latitude: -38.0876, longitude: 146.5124 },
-      { latitude: -38.1723, longitude: 146.2680 }, // Moe (3844) 포함
-      { latitude: -37.7311, longitude: 146.7693 },
-      { latitude: -37.4150, longitude: 147.4087 }
-    ],
-    visaType: VISA_FILTER.WHV_417
-  },
-  {
-    name: "모닝턴 페닌슐라 (3921-3925)",
-    color: WHV_417_COLOR,
-    strokeColor: "rgba(76, 175, 80, 0.8)",
-    coordinates: [
-      { latitude: -38.2551, longitude: 144.9595 },
-      { latitude: -38.3731, longitude: 145.1566 },
-      { latitude: -38.5228, longitude: 145.0166 },
-      { latitude: -38.4547, longitude: 144.7997 },
-      { latitude: -38.2551, longitude: 144.9595 }
-    ],
-    visaType: VISA_FILTER.WHV_417
-  },
-  {
-    name: "Victoria South East (3945-3974, 3979, 3981-3996)",
-    color: WHV_417_COLOR,
-    strokeColor: "rgba(76, 175, 80, 0.8)",
-    coordinates: [
-      { latitude: -38.3946, longitude: 147.1517 },
-      { latitude: -38.5777, longitude: 148.5241 },
-      { latitude: -39.1625, longitude: 147.9148 },
-      { latitude: -39.5085, longitude: 146.4123 },
-      { latitude: -39.1061, longitude: 146.1553 },
-      { latitude: -38.7607, longitude: 145.4393 },
-      { latitude: -38.3946, longitude: 147.1517 }
-    ],
-    visaType: VISA_FILTER.WHV_417
-  },
-];
-
-// 491 비자 지역 폴리곤 데이터
-const visa491Regions = [
-  {
-    name: "Victoria North and North West (491 visa region)",
-    color: VISA_491_COLOR,
-    strokeColor: "rgba(33, 150, 243, 0.8)",
-    coordinates: [
-      { latitude: -36.0782, longitude: 144.7317 },
-      { latitude: -35.9957, longitude: 146.0974 },
-      { latitude: -36.0232, longitude: 147.8548 },
-      { latitude: -36.3731, longitude: 144.3493 },
-      { latitude: -37.0538, longitude: 143.9114 },
-      { latitude: -37.0538, longitude: 142.2313 },
-      { latitude: -36.0782, longitude: 144.7317 }
-    ],
-    visaType: VISA_FILTER.VISA_491
-  },
-  {
-    name: "Victoria Central (491 visa region)",
-    color: VISA_491_COLOR,
-    strokeColor: "rgba(33, 150, 243, 0.8)",
-    coordinates: [
-      { latitude: -37.2412, longitude: 143.8710 },
-      { latitude: -37.7311, longitude: 144.2053 },
-      { latitude: -38.0876, longitude: 143.9483 },
-      { latitude: -38.5228, longitude: 142.8717 },
-      { latitude: -38.2551, longitude: 141.6097 },
-      { latitude: -37.7975, longitude: 141.3527 },
-      { latitude: -37.0538, longitude: 142.2313 },
-      { latitude: -37.2412, longitude: 143.8710 }
-    ],
-    visaType: VISA_FILTER.VISA_491
-  },
-  {
-    name: "Victoria North East (491 visa region)",
-    color: VISA_491_COLOR,
-    strokeColor: "rgba(33, 150, 243, 0.8)",
-    coordinates: [
-      { latitude: -36.3731, longitude: 146.9761 },
-      { latitude: -36.0232, longitude: 147.8548 },
-      { latitude: -36.2657, longitude: 148.5241 },
-      { latitude: -37.0125, longitude: 148.1417 },
-      { latitude: -37.4150, longitude: 147.4087 },
-      { latitude: -37.0950, longitude: 146.5381 },
-      { latitude: -36.3731, longitude: 146.9761 }
-    ],
-    visaType: VISA_FILTER.VISA_491
-  },
-  {
-    name: "Melbourne Outer (3097-3099, 491 visa region)",
-    color: VISA_491_COLOR,
-    strokeColor: "rgba(33, 150, 243, 0.8)",
-    coordinates: [
-      { latitude: -37.6423, longitude: 144.9127 },
-      { latitude: -37.7068, longitude: 145.0543 },
-      { latitude: -37.7525, longitude: 144.9287 },
-      { latitude: -37.6959, longitude: 144.8123 },
-      { latitude: -37.6423, longitude: 144.9127 }
-    ],
-    visaType: VISA_FILTER.VISA_491
-  },
-  {
-    name: "Yandernoib Valley (3139, 491 visa region)",
-    color: VISA_491_COLOR,
-    strokeColor: "rgba(33, 150, 243, 0.8)",
-    coordinates: [
-      { latitude: -37.7368, longitude: 145.3680 },
-      { latitude: -37.7611, longitude: 145.4425 },
-      { latitude: -37.7852, longitude: 145.4480 },
-      { latitude: -37.8100, longitude: 145.3825 },
-      { latitude: -37.7768, longitude: 145.3625 },
-      { latitude: -37.7368, longitude: 145.3680 }
-    ],
-    visaType: VISA_FILTER.VISA_491
-  },
-  {
-    name: "Western Gippsland (491 visa region)",
-    color: VISA_491_COLOR,
-    strokeColor: "rgba(33, 150, 243, 0.8)",
-    coordinates: [
-      { latitude: -38.0350, longitude: 145.4480 },
-      { latitude: -38.0150, longitude: 145.7200 },
-      { latitude: -38.2400, longitude: 145.5500 },
-      { latitude: -38.1500, longitude: 145.3700 },
-      { latitude: -38.0350, longitude: 145.4480 }
-    ],
-    visaType: VISA_FILTER.VISA_491
-  },
-  {
-    name: "Gippsland East (491 visa region)",
-    color: VISA_491_COLOR,
-    strokeColor: "rgba(33, 150, 243, 0.8)",
-    coordinates: [
-      { latitude: -37.4150, longitude: 147.4087 },
-      { latitude: -37.0125, longitude: 148.1417 },
-      { latitude: -37.0950, longitude: 148.8831 },
-      { latitude: -37.5688, longitude: 149.4551 },
-      { latitude: -37.9495, longitude: 148.1418 },
-      { latitude: -38.5777, longitude: 146.9205 },
-      { latitude: -38.1723, longitude: 146.2680 },
-      { latitude: -37.7311, longitude: 146.7693 },
-      { latitude: -37.4150, longitude: 147.4087 }
-    ],
-    visaType: VISA_FILTER.VISA_491
-  },
-  {
-    name: "빅토리아 남동부 (491 비자 지역)",
-    color: VISA_491_COLOR,
-    strokeColor: "rgba(33, 150, 243, 0.8)",
-    coordinates: [
-      { latitude: -38.3946, longitude: 147.1517 },
-      { latitude: -38.5777, longitude: 148.5241 },
-      { latitude: -39.1061, longitude: 146.1553 },
-      { latitude: -38.7607, longitude: 145.4393 },
-      { latitude: -38.3946, longitude: 147.1517 }
-    ],
-    visaType: VISA_FILTER.VISA_491
-  },
-  {
-    name: "Mornington Peninsula (3921-3925, 491 visa region)",
-    color: VISA_491_COLOR,
-    strokeColor: "rgba(33, 150, 243, 0.8)",
-    coordinates: [
-      { latitude: -38.2551, longitude: 144.9595 },
-      { latitude: -38.3731, longitude: 145.1566 },
-      { latitude: -38.5228, longitude: 145.0166 },
-      { latitude: -38.4547, longitude: 144.7997 },
-      { latitude: -38.2551, longitude: 144.9595 }
-    ],
-    visaType: VISA_FILTER.VISA_491
-  }
-];
 
 // 폴리곤 데이터 초기화
-// const initializePolygons = () => {
-//   // 기존 491 비자 폴리곤 제거 (이미 존재하는 경우)
-//   const nonVisa491Polygons = regionPolygons.filter(polygon => 
-//     polygon.visaType !== VISA_FILTER.VISA_491
-//   );
-  
-//   // regionPolygons 배열 초기화 (WHV 417 폴리곤만 유지)
-//   regionPolygons.length = 0;
-//   regionPolygons.push(...nonVisa491Polygons);
-  
-//   // 491 비자 지역 폴리곤 추가
-//   regionPolygons.push(...visa491Regions);
-  
-//   // 필립 아일랜드 지역 (3978) 폴리곤 추가
-//   regionPolygons.push({
-//     name: "필립 아일랜드 (3978, 491 비자 지역)",
-//     color: VISA_491_COLOR,
-//     strokeColor: "rgba(33, 150, 243, 0.8)",
-//     coordinates: [
-//       { latitude: -38.4899, longitude: 145.2023 },
-//       { latitude: -38.4570, longitude: 145.2610 },
-//       { latitude: -38.5056, longitude: 145.3006 },
-//       { latitude: -38.5529, longitude: 145.2364 },
-//       { latitude: -38.4899, longitude: 145.2023 }
-//     ],
-//     visaType: VISA_FILTER.VISA_491
-//   });
-// };
 
 export default function PostcodeFinderScreen() {
   const [region, setRegion] = useState(VICTORIA_REGION);
@@ -462,52 +193,8 @@ export default function PostcodeFinderScreen() {
   // 컴포넌트 마운트 시 폴리곤 데이터 초기화
   useEffect(() => {
     loadGeoJsonData(); // GeoJSON 데이터 로드 (기본 소스)
-    
-    // 직접 3352 폴리곤 추가 (GeoJSON 데이터와 별개로)
-    addPostcode3352Polygon();
+  
   }, []);
-
-  // 3352 우편번호 폴리곤 직접 추가 함수
-  const addPostcode3352Polygon = () => {
-    // Ballarat 위치 기준으로 3352 폴리곤 생성
-    const ballarat = SAMPLE_POSTCODES.find(p => p.postcode === '3350');
-    if (ballarat) {
-      const center = ballarat.coordinates;
-      
-      // 폴리곤 크기를 키우고 위치 조정
-      const centerLat = center.latitude + 0.05;
-      const centerLng = center.longitude + 0.1;
-      const size = 0.1; // 폴리곤 크기 증가
-      
-      // 3352 폴리곤 생성
-      const polygon3352 = {
-        id: '3352',
-        name: 'Postcode 3352',
-        coordinates: [
-          { latitude: centerLat - size, longitude: centerLng - size },
-          { latitude: centerLat - size, longitude: centerLng + size },
-          { latitude: centerLat + size, longitude: centerLng + size },
-          { latitude: centerLat + size, longitude: centerLng - size },
-          { latitude: centerLat - size, longitude: centerLng - size }, // 폴리곤 닫기
-        ],
-        fillColor: 'rgba(76, 175, 80, 0.7)', // 더 뚜렷한 색상
-        strokeColor: 'rgba(76, 175, 80, 1)',
-        strokeWidth: 2,
-        visaType: VISA_FILTER.WHV_417,
-        isFallback: true
-      };
-      
-      // 폴리곤 상태에 직접 추가
-      setGeoJsonPolygons(prevPolygons => {
-        // 기존에 3352가 있으면 제거
-        const filteredPolygons = prevPolygons.filter(p => p.id !== '3352');
-        // 새 폴리곤 추가
-        return [...filteredPolygons, polygon3352];
-      });
-      
-      console.log('3352 폴리곤이 직접 추가되었습니다.');
-    }
-  };
 
   // GeoJSON 데이터 로드 함수
   const loadGeoJsonData = async () => {
@@ -546,109 +233,107 @@ export default function PostcodeFinderScreen() {
               break;
             }
           }
-          
-          // 좌표 변환
-          let coordinates = [];
-          try {
-            if (feature.geometry?.type === 'Polygon') {
-              // 폴리곤의 외곽 경계만 사용
-              coordinates = feature.geometry.coordinates[0].map(coord => ({
-                latitude: coord[1],
-                longitude: coord[0]
-              }));
-            } else if (feature.geometry?.type === 'MultiPolygon') {
-              // 첫 번째 폴리곤만 사용 (단순화)
-              if (feature.geometry.coordinates[0] && feature.geometry.coordinates[0][0]) {
-                coordinates = feature.geometry.coordinates[0][0].map(coord => ({
-                  latitude: coord[1],
-                  longitude: coord[0]
-                }));
-              }
-            }
-          } catch (error) {
-            console.log('좌표 변환 오류:', error);
-          }
-          
-          // 우편번호 기반 비자 적격 여부 확인
-          const postcodeStr = postcode.toString();
-          const isWhv417Eligible = isEligiblePostcode(postcodeStr);
-          const is491RegionEligible = is491Eligible(postcodeStr);
-          
+
+          const postcodeStr = String(postcode);
+        
+          // 비자 적격성 체크
+          const whv417RegionalStatus = checkWhv417RegionalEligibility(postcodeStr);
+          const whv417RemoteStatus = checkWhv417RemoteEligibility(postcodeStr);
+          const visa491Status = check491Eligibility(postcodeStr);
+
           // 색상 결정
           let fillColor = 'rgba(200, 200, 200, 0.2)'; // 기본 회색
           let strokeColor = 'rgba(150, 150, 150, 0.8)';
           let visaType = null;
-          
-          if (isWhv417Eligible && is491RegionEligible) {
-            // 두 비자 모두 적격
-            fillColor = 'rgba(198, 198, 29, 0.5)'; 
-            strokeColor = 'rgba(255, 253, 112, 0.8)';
-            visaType = VISA_FILTER.BOTH;
-          } else if (isWhv417Eligible) {
-            // 워홀 417만 적격
-            fillColor = 'rgba(76, 175, 80, 0.5)';
+
+          if (whv417RemoteStatus) {
+            fillColor = 'rgba(255, 87, 34, 0.5)'; // 주황색/빨간색
+            strokeColor = 'rgba(255, 87, 34, 0.8)';
+            visaType = VISA_FILTER.WHV_417_REMOTE;
+          } else if (whv417RegionalStatus) {
+            fillColor = 'rgba(76, 175, 80, 0.5)'; // 녹색
             strokeColor = 'rgba(76, 175, 80, 0.8)';
-            visaType = VISA_FILTER.WHV_417;
-          } else if (is491RegionEligible) {
-            // 491 비자만 적격
-            fillColor = 'rgba(33, 150, 243, 0.5)';
-            strokeColor = 'rgba(33, 150, 243, 0.8)';
+            visaType = VISA_FILTER.WHV_417_REGIONAL;
+          } else if (visa491Status) {
+            fillColor = 'rgba(156, 39, 176, 0.5)'; // 보라색
+            strokeColor = 'rgba(156, 39, 176, 0.8)';
             visaType = VISA_FILTER.VISA_491;
           }
-          
-          return {
-            id: postcodeStr,
-            name: `우편번호 ${postcodeStr}`,
-            coordinates,
-            fillColor,
-            strokeColor,
-            strokeWidth: 1,
-            visaType
-          };
+        
+          // 두 비자 타입 모두에 적격한 경우
+          if (whv417RegionalStatus && visa491Status) {
+            fillColor = 'rgba(0, 188, 212, 0.5)'; // 청록색
+            strokeColor = 'rgba(0, 188, 212, 0.8)';
+            visaType = VISA_FILTER.BOTH;
+          }
+
+          // 좌표 변환 및 폴리곤 생성
+          try {
+            if (feature.geometry?.type === 'Polygon') {
+              // 폴리곤의 외곽 경계만 사용
+              const coordinates = feature.geometry.coordinates[0].map(coord => ({
+                latitude: coord[1],
+                longitude: coord[0]
+              }));
+            
+              // 폴리곤 추가
+              if (coordinates.length > 2) {
+                return {
+                  id: postcodeStr,
+                  name: postcodeStr,
+                  coordinates,
+                  fillColor,
+                  strokeColor,
+                  strokeWidth: 1,
+                  visaType,
+                  isMultiPolygonPart: false
+                };
+              }
+            } 
+            else if (feature.geometry?.type === 'MultiPolygon') {
+         
+              // MultiPolygon의 모든 폴리곤 순회하고 개별적으로 추가
+              const polygons = [];
+              for (let i = 0; i < feature.geometry.coordinates.length; i++) {
+                // 각 폴리곤의 외부 링
+                for (let j = 0; j < feature.geometry.coordinates[i].length; j++) {
+                  const polygonCoords = feature.geometry.coordinates[i][j];
+                
+                  if (polygonCoords && polygonCoords.length > 2) {
+                    const coordinates = polygonCoords.map(coord => ({
+                      latitude: coord[1],
+                      longitude: coord[0]
+                    }));
+                
+             
+                
+                    // 각 폴리곤 부분마다 고유 ID 생성
+                    polygons.push({
+                      id: `${postcodeStr}-${i}-${j}`,
+                      name: postcodeStr,
+                      coordinates,
+                      fillColor,
+                      strokeColor,
+                      strokeWidth: 1,
+                      visaType,
+                      isMultiPolygonPart: true,
+                      parentId: postcodeStr
+                    });
+                  }
+                }
+              }
+              return polygons;
+            }
+          } catch (error) {
+            console.error(`Error processing postcode ${postcode}:`, error);
+          }
         });
       
-      // 좌표가 유효한 폴리곤만 필터링
-      const validPolygons = victoriaPolygons.filter(
+      // 유효한 폴리곤만 사용 (3개 이상의 좌표를 가진 폴리곤)
+      const validPolygons = victoriaPolygons.flat().filter(
         polygon => polygon.coordinates && polygon.coordinates.length > 2
       );
       
-      // Add fallback polygon for postcode 3352 if it's missing
-      const has3352 = validPolygons.some(polygon => polygon.id === '3352');
-      if (!has3352) {
-        console.log('Adding fallback polygon for missing postcode 3352');
-        
-        // Create a simple polygon for postcode 3352 (approximate location near Ballarat)
-        // Using Ballarat (3350) as reference and offsetting slightly
-        const ballarat = SAMPLE_POSTCODES.find(p => p.postcode === '3350');
-        if (ballarat) {
-          const center = ballarat.coordinates;
-          
-          // Create a simple square polygon around the center point
-          // Offset slightly east of Ballarat
-          const centerLat = center.latitude + 0.05;
-          const centerLng = center.longitude + 0.1;
-          const size = 0.1; // 폴리곤 크기 증가
-          
-          const fallbackPolygon = {
-            id: '3352',
-            name: 'Postcode 3352',
-            coordinates: [
-              { latitude: centerLat - size, longitude: centerLng - size },
-              { latitude: centerLat - size, longitude: centerLng + size },
-              { latitude: centerLat + size, longitude: centerLng + size },
-              { latitude: centerLat + size, longitude: centerLng - size },
-              { latitude: centerLat - size, longitude: centerLng - size }, // 폴리곤 닫기
-            ],
-            fillColor: 'rgba(76, 175, 80, 0.7)', // 더 뚜렷한 색상
-            strokeColor: 'rgba(76, 175, 80, 1)',
-            strokeWidth: 2,
-            visaType: VISA_FILTER.WHV_417,
-            isFallback: true
-          };
-          
-          validPolygons.push(fallbackPolygon);
-        }
-      }
       
       // 모든 유효 폴리곤을 사용
       setGeoJsonPolygons(validPolygons);
@@ -736,36 +421,41 @@ export default function PostcodeFinderScreen() {
 
         Alert.alert(
           `Postcode ${geoPolygon.id}`,
-          geoPolygon.visaType === VISA_FILTER.WHV_417
-            ? 'This area is eligible for the Working Holiday Visa 417 extension'
+          geoPolygon.visaType === VISA_FILTER.WHV_417_REGIONAL
+            ? 'Working Holiday Visa 417 Regional Australia'
+            : geoPolygon.visaType === VISA_FILTER.WHV_417_REMOTE
+            ? 'Working Holiday Visa 417 Remote Australia'
             : geoPolygon.visaType === VISA_FILTER.VISA_491
-            ? 'This area is eligible for the 491 visa'
-            : 'This area is eligible for both Working Holiday Visa 417 extension and 491 visa'
+            ? '491 visa'
+            : geoPolygon.visaType === VISA_FILTER.BOTH
+            ? 'Working Holiday Visa 417 and 491 visa'
+            : 'This area is not eligible for any visa extension'
         );
         return;
       }
 
       // 3단계: 단순 우편번호 텍스트 유효성 검사
       if (/^\d{4}$/.test(searchQuery)) {
-        const whvEligible = isEligiblePostcode(searchQuery);
-        const visa491Eligible = is491Eligible(searchQuery);
+        const postcode = searchQuery;
+        const whvRegionalEligible = checkWhv417RegionalEligibility(postcode);
+        const whvRemoteEligible = checkWhv417RemoteEligibility(postcode);
+        const visa491Eligible = check491Eligibility(postcode);
         
-        // 두 비자 모두 정보를 한 번에 표시
-        let message = "";
+        // 비자 정보를 한 번에 표시
+        let message = "Working Holiday Visa 417 Regional: " + 
+                  (whvRegionalEligible ? "✅ Eligible area" : "❌ Ineligible area") + 
+                  "\n\n";
         
-        // 워홀 비자 정보
-        message += "Working Holiday Visa 417: " + 
-                  (whvEligible ? "✅ Eligible area" : "❌ Ineligible area") + 
+        // 워홀 리모트 비자 정보
+        message += "Working Holiday Visa 417 Remote: " + 
+                  (whvRemoteEligible ? "✅ Eligible area" : "❌ Ineligible area") + 
                   "\n\n";
         
         // 491 비자 정보
         message += "491 visa: " + 
                   (visa491Eligible ? "✅ Eligible area" : "❌ Ineligible area");
         
-        Alert.alert(
-          `Postcode ${searchQuery} information`,
-          message
-        );
+        Alert.alert(`Postcode ${postcode} Eligibility`, message);
       } else {
         Alert.alert('No search results', 'Please try searching with a different postcode or region name.');
       }
@@ -790,6 +480,8 @@ export default function PostcodeFinderScreen() {
     });
   };
 
+
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -800,7 +492,7 @@ export default function PostcodeFinderScreen() {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>지도 데이터 로드 중...</Text>
+          <Text style={styles.loadingText}>Loading map data...</Text>
         </View>
       ) : (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -811,35 +503,67 @@ export default function PostcodeFinderScreen() {
               region={region}
               onRegionChangeComplete={setRegion}
             >
-              {(filter === VISA_FILTER.ALL
+              {
+              
+              
+              (filter === VISA_FILTER.ALL
                 ? geoJsonPolygons
                 : geoJsonPolygons.filter(polygon =>
-                    polygon.visaType === filter || polygon.visaType === VISA_FILTER.BOTH
+                    polygon.visaType === filter || 
+                    (filter === VISA_FILTER.WHV_417_REGIONAL && polygon.visaType === VISA_FILTER.BOTH) ||
+                    (filter === VISA_FILTER.WHV_417_REMOTE && polygon.visaType === VISA_FILTER.BOTH) ||
+                    (filter === VISA_FILTER.VISA_491 && polygon.visaType === VISA_FILTER.BOTH)
                   )
-              ).map((polygonData, index) => (
+              ).map((polygonData, index) => {
+                // 필터에 따라 색상 동적 변경
+                let fillColor = polygonData.fillColor;
+                let strokeColor = polygonData.strokeColor;
+
+            
+                
+                // 491 필터를 선택했을 때 BOTH 타입도 보라색으로 표시
+                if (filter === VISA_FILTER.VISA_491 && polygonData.visaType === VISA_FILTER.BOTH) {
+                  fillColor = 'rgba(178, 29, 198, 0.5)'; // 보라색
+                  strokeColor = 'rgba(111, 0, 117, 0.8)';
+                }
+                
+                // WHV_417_REGIONAL 필터를 선택했을 때 BOTH 타입은 녹색으로 표시
+                if (filter === VISA_FILTER.WHV_417_REGIONAL && polygonData.visaType === VISA_FILTER.BOTH) {
+                  fillColor = 'rgba(76, 175, 80, 0.5)'; // 녹색
+                  strokeColor = 'rgba(76, 175, 80, 0.8)';
+                }
+                
+                // WHV_417_REMOTE 필터를 선택했을 때 BOTH 타입은 주황색/빨간색으로 표시
+                if (filter === VISA_FILTER.WHV_417_REMOTE && polygonData.visaType === VISA_FILTER.BOTH) {
+                  fillColor = 'rgba(255, 87, 34, 0.5)'; // 주황색/빨간색
+                  strokeColor = 'rgba(255, 87, 34, 0.8)';
+                }
+                
+                return (
                 <Polygon
                   key={`polygon-${index}`}
                   coordinates={polygonData.coordinates}
-                  fillColor={polygonData.fillColor || polygonData.color}
-                  strokeColor={polygonData.strokeColor}
+                  fillColor={fillColor}
+                  strokeColor={strokeColor}
                   strokeWidth={polygonData.strokeWidth || 2}
                   tappable
                   onPress={() => {
                     let message = "";
-                    if (polygonData.visaType === VISA_FILTER.WHV_417) {
-                      message = "This area is eligible for the Working Holiday Visa 417 extension.";
+                    if (polygonData.visaType === VISA_FILTER.WHV_417_REGIONAL) {
+                      message = "Working Holiday Visa 417 Regional Australia";
+                    } else if (polygonData.visaType === VISA_FILTER.WHV_417_REMOTE) {
+                      message = "Working Holiday Visa 417 Remote Australia";
                     } else if (polygonData.visaType === VISA_FILTER.VISA_491) {
-                      message = "This area is eligible for the 491 visa.";
+                      message = "491 visa";
                     } else if (polygonData.visaType === VISA_FILTER.BOTH) {
-                      message = "This area is eligible for both Working Holiday Visa 417 extension and 491 visa.";
+                      message = "Working Holiday Visa 417 and 491 visa";
                     } else {
-                      message = "The postcode of this area is " + polygonData.id + ".";
+                      message = "This area is not eligible for any visa extension.";
                     }
-                    
                     Alert.alert(polygonData.name, message);
                   }}
-                />
-              ))}
+                  />
+                )})}
               
               {/* 대표적인 우편번호 지역 마커 표시 */}
               {SAMPLE_POSTCODES.map((item, index) => (
@@ -883,14 +607,27 @@ export default function PostcodeFinderScreen() {
               <TouchableOpacity
                 style={[
                   styles.filterButton, 
-                  filter === VISA_FILTER.WHV_417 ? styles.activeFilterButton : null
+                  filter === VISA_FILTER.WHV_417_REGIONAL ? styles.activeFilterButton : null
                 ]}
-                onPress={() => handleFilterChange(VISA_FILTER.WHV_417)}
+                onPress={() => handleFilterChange(VISA_FILTER.WHV_417_REGIONAL)}
               >
                 <Text style={[
                   styles.filterButtonText, 
-                  filter === VISA_FILTER.WHV_417 ? styles.activeFilterText : null
-                ]}>417</Text>
+                  filter === VISA_FILTER.WHV_417_REGIONAL ? styles.activeFilterText : null
+                ]}>417 Regional</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.filterButton, 
+                  filter === VISA_FILTER.WHV_417_REMOTE ? styles.activeFilterButton : null
+                ]}
+                onPress={() => handleFilterChange(VISA_FILTER.WHV_417_REMOTE)}
+              >
+                <Text style={[
+                  styles.filterButtonText, 
+                  filter === VISA_FILTER.WHV_417_REMOTE ? styles.activeFilterText : null
+                ]}>417 Remote</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -953,10 +690,18 @@ export default function PostcodeFinderScreen() {
       
       <ScrollView style={styles.infoContainer}>
         {/* WHV 417 우편번호 정보 */}
-        <Text style={styles.infoTitle}>Working Holiday Visa 417 Eligible Postcodes</Text>
-        <Text style={styles.infoText}>
+        <Text style={styles.infoTitle}>Working Holiday Visa 417 - Regional</Text>
+        <Text style={[styles.infoText, {marginBottom: 20}]}>
           3139, 3211-3334, 3340-3424, 3430-3649, 3658-3749, 3753, 3756, 3758, 3762, 3764, 
           3778-3781, 3783, 3797, 3799, 3810-3909, 3921-3925, 3945-3974, 3979, 3981-3996
+        </Text>
+  
+
+
+            {/* WHV 417 Remote 우편번호 정보 */}
+            <Text style={styles.infoTitle}>Working Holiday Visa 417 - Remote</Text>
+        <Text style={styles.infoText}>
+        3424, 3506, 3509, 3512, 3889-3892
         </Text>
         <Text style={styles.sourceText}>
           Source: <Text 
@@ -970,8 +715,19 @@ export default function PostcodeFinderScreen() {
         {/* 491 비자 우편번호 정보 */}
         <Text style={[styles.infoTitle, {marginTop: 20}]}>491 visa Eligible Postcodes</Text>
         <Text style={styles.infoText}>
-          3097-3099, 3139, 3211-3333, 3340-3342, 3345-3424, 3430-3799, 3809-3909, 3912-3971, 3978-3996
+       <Text style={{fontWeight: 'bold'}}>Cities and major regional centres</Text>
+       <Text>{'\n'}</Text> 
+       <Text style={styles.infoText}>
+        3211-3232, 3235, 3240, 3328, 3330-3333, 3340, 3342
+          </Text>
+          <Text>{'\n'}</Text> 
+        <Text style={{fontWeight: 'bold'}}>Regional centres and other regional areas</Text>
+       <Text>{'\n'}</Text> 
+       <Text style={styles.infoText}>
+          3097-3099, 3139,  3233-3234, 3236-3239, 3241-3325, 3329, 3334, 3341, 3345-3424, 3430-3799, 3809-3909, 3912-3971, 3978-3996
+          </Text>
         </Text>
+
         <Text style={styles.sourceText}>
           Source: <Text 
             style={styles.linkText}
