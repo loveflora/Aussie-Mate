@@ -176,6 +176,36 @@ const SAMPLE_POSTCODES = [
 }
 ];
 
+// 우편번호의 비자 자격 메시지를 반환하는 함수
+const getVisaEligibilityMessage = (postcodeStr) => {
+  if (!postcodeStr) return "No postcode information available.";
+  
+  const is417Regional = checkWhv417RegionalEligibility(postcodeStr);
+  const is417Remote = checkWhv417RemoteEligibility(postcodeStr);
+  const is491 = check491Eligibility(postcodeStr);
+  
+  let message = `postcode ${postcodeStr}\n\n`;
+  
+  if (!is417Regional && !is417Remote && !is491) {
+    message += "This area is not eligible for any visa extension.";
+    return message;
+  }
+  
+  if (is417Regional) {
+    message += "✅ WHV 417 Regional Australia\n";
+  }
+  
+  if (is417Remote) {
+    message += "✅ WHV 417 Remote Australia\n";
+  }
+  
+  if (is491) {
+    message += "✅ 491 visa\n";
+  }
+  
+  return message;
+};
+
 // 우편번호 범위에 대응하는 대략적인 지리적 영역 폴리곤 (시각적 표현용)
 
 // 폴리곤 데이터 초기화
@@ -484,10 +514,7 @@ export default function PostcodeFinderScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Postcode Finder</Text>
-        <Text style={styles.subtitle}>Victorian visa eligible regions</Text>
-      </View>
+     
       
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -504,66 +531,67 @@ export default function PostcodeFinderScreen() {
               onRegionChangeComplete={setRegion}
             >
               {
-              
-              
               (filter === VISA_FILTER.ALL
                 ? geoJsonPolygons
-                : geoJsonPolygons.filter(polygon =>
-                    polygon.visaType === filter || 
-                    (filter === VISA_FILTER.WHV_417_REGIONAL && polygon.visaType === VISA_FILTER.BOTH) ||
-                    (filter === VISA_FILTER.WHV_417_REMOTE && polygon.visaType === VISA_FILTER.BOTH) ||
-                    (filter === VISA_FILTER.VISA_491 && polygon.visaType === VISA_FILTER.BOTH)
-                  )
+                : geoJsonPolygons.filter(polygon => {
+                    // 폴리곤의 우편번호 추출 (일반 폴리곤 또는 MultiPolygon 파트)
+                    const postcodeStr = polygon.name || (polygon.id && !polygon.isMultiPolygonPart ? polygon.id : polygon.parentId || '');
+                    
+                    // 우편번호가 없으면 필터링에서 제외
+                    if (!postcodeStr) return false;
+                    
+                    // 선택된 필터에 따라 적절한 확인 함수 사용
+                    if (filter === VISA_FILTER.WHV_417_REGIONAL) {
+                      return checkWhv417RegionalEligibility(postcodeStr);
+                    }
+                    if (filter === VISA_FILTER.WHV_417_REMOTE) {
+                      return checkWhv417RemoteEligibility(postcodeStr);
+                    }
+                    if (filter === VISA_FILTER.VISA_491) {
+                      return check491Eligibility(postcodeStr);
+                    }
+                    
+                    // 기본값으로 false 반환
+                    return false;
+                  })
               ).map((polygonData, index) => {
-                // 필터에 따라 색상 동적 변경
+                // 필터에 따라 폴리곤 색상 설정
                 let fillColor = polygonData.fillColor;
                 let strokeColor = polygonData.strokeColor;
-
-            
                 
-                // 491 필터를 선택했을 때 BOTH 타입도 보라색으로 표시
-                if (filter === VISA_FILTER.VISA_491 && polygonData.visaType === VISA_FILTER.BOTH) {
+                // 우편번호 추출
+                const postcodeStr = polygonData.name || (polygonData.id && !polygonData.isMultiPolygonPart ? polygonData.id : polygonData.parentId || '');
+                
+                // 필터에 따라 색상 설정
+                if (filter === VISA_FILTER.ALL) {
+                  // 원래 색상 유지
+                } else if (filter === VISA_FILTER.WHV_417_REGIONAL) {
+                  fillColor = 'rgba(76, 175, 80, 0.5)'; // 녹색
+                  strokeColor = 'rgba(76, 175, 80, 0.8)';
+                } else if (filter === VISA_FILTER.WHV_417_REMOTE) {
+                  fillColor = 'rgba(255, 87, 34, 0.5)'; // 주황색/빨간색
+                  strokeColor = 'rgba(255, 87, 34, 0.8)';
+                } else if (filter === VISA_FILTER.VISA_491) {
                   fillColor = 'rgba(178, 29, 198, 0.5)'; // 보라색
                   strokeColor = 'rgba(111, 0, 117, 0.8)';
                 }
                 
-                // WHV_417_REGIONAL 필터를 선택했을 때 BOTH 타입은 녹색으로 표시
-                if (filter === VISA_FILTER.WHV_417_REGIONAL && polygonData.visaType === VISA_FILTER.BOTH) {
-                  fillColor = 'rgba(76, 175, 80, 0.5)'; // 녹색
-                  strokeColor = 'rgba(76, 175, 80, 0.8)';
-                }
-                
-                // WHV_417_REMOTE 필터를 선택했을 때 BOTH 타입은 주황색/빨간색으로 표시
-                if (filter === VISA_FILTER.WHV_417_REMOTE && polygonData.visaType === VISA_FILTER.BOTH) {
-                  fillColor = 'rgba(255, 87, 34, 0.5)'; // 주황색/빨간색
-                  strokeColor = 'rgba(255, 87, 34, 0.8)';
-                }
-                
                 return (
-                <Polygon
-                  key={`polygon-${index}`}
-                  coordinates={polygonData.coordinates}
-                  fillColor={fillColor}
-                  strokeColor={strokeColor}
-                  strokeWidth={polygonData.strokeWidth || 2}
-                  tappable
-                  onPress={() => {
-                    let message = "";
-                    if (polygonData.visaType === VISA_FILTER.WHV_417_REGIONAL) {
-                      message = "Working Holiday Visa 417 Regional Australia";
-                    } else if (polygonData.visaType === VISA_FILTER.WHV_417_REMOTE) {
-                      message = "Working Holiday Visa 417 Remote Australia";
-                    } else if (polygonData.visaType === VISA_FILTER.VISA_491) {
-                      message = "491 visa";
-                    } else if (polygonData.visaType === VISA_FILTER.BOTH) {
-                      message = "Working Holiday Visa 417 and 491 visa";
-                    } else {
-                      message = "This area is not eligible for any visa extension.";
-                    }
-                    Alert.alert(polygonData.name, message);
-                  }}
+                  <Polygon
+                    key={`polygon-${polygonData.id || index}`}
+                    coordinates={polygonData.coordinates}
+                    fillColor={fillColor}
+                    strokeColor={strokeColor}
+                    strokeWidth={polygonData.strokeWidth || 2}
+                    tappable
+                    onPress={() => {
+                      // 우편번호 정보 표시 로직
+                      const visaEligibility = getVisaEligibilityMessage(postcodeStr);
+                      Alert.alert(`우편번호: ${postcodeStr}`, visaEligibility);
+                    }}
                   />
-                )})}
+                );
+              })}
               
               {/* 대표적인 우편번호 지역 마커 표시 */}
               {SAMPLE_POSTCODES.map((item, index) => (
@@ -673,7 +701,11 @@ export default function PostcodeFinderScreen() {
       )}
       
       <View style={styles.searchContainer}>
+      {/* <View style={styles.header}> */}
+        {/* <Text style={styles.title}>Postcode Finder</Text> */}
+        <Text style={styles.subtitle}>Victorian visa eligible regions</Text>
         <Text style={styles.sectionTitle}>Search by postcode</Text>
+      {/* </View> */}
         <View style={styles.searchRow}>
           <TextInput
             style={styles.searchInput}
@@ -768,7 +800,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    padding: 16,
+paddingBottom: 10,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
@@ -777,21 +810,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#666',
-    marginTop: 4,
   },
   loadingContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    height: 400,
   },
   loadingText: {
     marginTop: 10,
     color: '#666',
   },
   mapContainer: {
-    height: 350,
+    height: 400,
     position: 'relative',
   },
   map: {
@@ -819,7 +851,7 @@ const styles = StyleSheet.create({
   },
   myLocationButton: {
     position: 'absolute',
-    top: 16,
+    bottom: 20,
     right: 16,
     backgroundColor: 'white',
     width: 44,
@@ -832,6 +864,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+    zIndex: 90,
   },
   filterContainer: {
     position: 'absolute',
@@ -847,14 +880,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 8,
     backgroundColor: '#fff',
-    borderColor: '#007AFF',
-    borderWidth: 1,
   },
   activeFilterButton: {
     backgroundColor: '#007AFF',
   },
   filterButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
     color: '#007AFF',
   },
