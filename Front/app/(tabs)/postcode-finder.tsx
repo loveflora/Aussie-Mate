@@ -836,12 +836,19 @@ export default function PostcodeFinderScreen() {
           </Text>
         </Text>
         
-        <Text style={styles.noteText}>
-          Note: This is based on the information provided by the Australian government's immigration website. The information may change, please check the latest information. 
+   {/* ------- Contact section ------- */}
+   <View style={styles.contactSection}>
+          <Text style={styles.contactTitle}>Disclaimer</Text>
+          <Text style={styles.contactText}>
+          This app is not affiliated with or endorsed by the Australian Government. It is provided for informational and reference purposes only.{'\n'}{'\n'} 
+          For the most accurate and up-to-date information, please visit the Australian Department of Home Affairs <Text style={styles.emailLink} onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/')}>
+           (immi.homeaffairs.gov.au)
         </Text>
+          </Text>
+        </View>
 
 
-           {/* 문의하기 이메일 섹션 추가 */}
+           {/* ------- Contact section ------- */}
            <View style={styles.contactSection}>
           <Text style={styles.contactTitle}>Contact Us</Text>
           <Text style={styles.contactText}>
@@ -853,8 +860,7 @@ export default function PostcodeFinderScreen() {
             <Text style={styles.emailLink}>kshhhh0640@gmail.com</Text>
           </TouchableOpacity>
           
-          {/* 여백 추가 */}
-          <View style={{height: 40}} />
+
         </View>
       </ScrollView>
     </SafeAreaView>
