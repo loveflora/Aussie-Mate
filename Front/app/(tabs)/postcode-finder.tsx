@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, Keyboard, TouchableWithoutFeedback, Pressable, Linking } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, Keyboard, TouchableWithoutFeedback, Pressable, Linking, Dimensions, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Polygon, Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import { FontAwesome } from '@expo/vector-icons';
 import vicGeoJson from '../../assets/data/vic-postcodes.json';
-
 
 // 워홀 417 지역 적격 우편번호 데이터
 const whv417PostcodesRegional = {
@@ -184,7 +183,7 @@ const getVisaEligibilityMessage = (postcodeStr) => {
   const is417Remote = checkWhv417RemoteEligibility(postcodeStr);
   const is491 = check491Eligibility(postcodeStr);
   
-  let message = `postcode ${postcodeStr}\n\n`;
+  let message = ``;
   
   if (!is417Regional && !is417Remote && !is491) {
     message += "This area is not eligible for any visa extension.";
@@ -510,6 +509,41 @@ export default function PostcodeFinderScreen() {
     });
   };
 
+  // 지도 빈 영역 클릭 핸들러 추가
+  const handleMapPress = () => {
+    // 선택된 우편번호 정보 초기화
+    setSelectedPostcode(null);
+  };
+
+  // 유저 위치 마커 클릭 핸들러 함수 추가
+  const handleMyLocationClick = async () => {
+    if (!userLocation) return;
+    
+    try {
+      // 역지오코딩으로 위치의 우편번호 찾기 시도
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.latitude}&lon=${userLocation.longitude}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+      
+      // 우편번호 추출 시도
+      const postcode = data.address?.postcode || '3000'; // 기본값 설정
+      
+      // 선택된 우편번호 정보 설정
+      setSelectedPostcode({
+        postcode: postcode,
+        name: data.address?.suburb || data.address?.city || 'Current Location',
+        coordinates: userLocation,
+        eligible: checkWhv417RegionalEligibility(postcode) || 
+                 checkWhv417RemoteEligibility(postcode) || 
+                 check491Eligibility(postcode)
+      });
+    } catch (error) {
+      console.error('Error getting location info:', error);
+      Alert.alert('Error', 'Could not determine postcode for this location');
+    }
+  };
+
 
 
   return (
@@ -529,6 +563,8 @@ export default function PostcodeFinderScreen() {
               initialRegion={region}
               region={region}
               onRegionChangeComplete={setRegion}
+              provider="google" 
+              onPress={handleMapPress}
             >
               {
               (filter === VISA_FILTER.ALL
@@ -587,33 +623,49 @@ export default function PostcodeFinderScreen() {
                     onPress={() => {
                       // 우편번호 정보 표시 로직
                       const visaEligibility = getVisaEligibilityMessage(postcodeStr);
-                      Alert.alert(`우편번호: ${postcodeStr}`, visaEligibility);
+                      Alert.alert(`Postcode: ${postcodeStr}`, visaEligibility);
                     }}
                   />
                 );
               })}
               
               {/* 대표적인 우편번호 지역 마커 표시 */}
-              {SAMPLE_POSTCODES.map((item, index) => (
-                <Marker
-                  key={index}
-                  coordinate={item.coordinates}
-                  title={`${item.postcode} ${item.name}`}
-                  description={item.eligible ? 'Eligible area' : 'Ineligible area'}
-                  pinColor={item.eligible ? 'green' : 'red'}
-                  onPress={() => handleMarkerPress(item)}
-                />
-              ))}
+              {SAMPLE_POSTCODES.map((item, index) => {
+                // 각 지역의 비자 적격성 확인
+                const isWhv417Regional = checkWhv417RegionalEligibility(item.postcode.toString());
+                const isWhv417Remote = checkWhv417RemoteEligibility(item.postcode.toString());
+                const is491 = check491Eligibility(item.postcode.toString());
+                
+                // 적격한 비자들을 문자열로 생성
+                let eligibleVisas = [];
+                if (isWhv417Regional) eligibleVisas.push("417 Regional");
+                if (isWhv417Remote) eligibleVisas.push("417 Remote");
+                if (is491) eligibleVisas.push("491");
+                
+                const visaDescription = eligibleVisas.length > 0 
+                  ? `Eligible for: ${eligibleVisas.join(', ')}` 
+                  : 'Not eligible for any visa';
+                  
+                return (
+                  <Marker
+                    key={index}
+                    coordinate={item.coordinates}
+                    title={`${item.postcode} ${item.name}`}
+                    description={visaDescription}
+                    pinColor={eligibleVisas.length > 0 ? 'green' : 'red'}
+                    onPress={() => handleMarkerPress(item)}
+                  />
+                );
+              })}
               
               {/* 사용자 위치 표시 */}
               {userLocation && (
                 <Marker
                   coordinate={userLocation}
-                  title="내 위치"
+                  title="Your Location"
                   pinColor="blue"
-                >
-                  <IconSymbol name="location.fill" size={30} color="blue" />
-                </Marker>
+                  onPress={handleMyLocationClick}
+                />
               )}
             </MapView>
             
@@ -682,9 +734,23 @@ export default function PostcodeFinderScreen() {
                   styles.eligibilityText, 
                   { color: selectedPostcode.eligible ? '#34C759' : '#FF3B30' }
                 ]}>
-                  {selectedPostcode.eligible 
-                    ? 'Eligible area' 
-                    : 'Ineligible area'}
+                  {(() => {
+                    const postcodeStr = selectedPostcode.postcode.toString();
+                    const isWhv417Regional = checkWhv417RegionalEligibility(postcodeStr);
+                    const isWhv417Remote = checkWhv417RemoteEligibility(postcodeStr);
+                    const is491 = check491Eligibility(postcodeStr);
+                    
+                    let eligibleVisas = [];
+                    if (isWhv417Regional) eligibleVisas.push("417 Regional");
+                    if (isWhv417Remote) eligibleVisas.push("417 Remote");
+                    if (is491) eligibleVisas.push("491");
+                    
+                    if (eligibleVisas.length === 0) {
+                      return 'Not eligible for any visa';
+                    } else {
+                      return `Eligible for: ${eligibleVisas.join(', ')}`;
+                    }
+                  })()}
                 </Text>
               </View>
             )}
@@ -694,7 +760,7 @@ export default function PostcodeFinderScreen() {
               style={styles.myLocationButton}
               onPress={checkCurrentLocation}
             >
-              <IconSymbol name="location.fill" size={24} color="#007AFF" />
+              <FontAwesome name="location-arrow" size={22} color="#007AFF" />
             </TouchableOpacity>
           </View>
         </TouchableWithoutFeedback>
@@ -710,12 +776,13 @@ export default function PostcodeFinderScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder="Enter postcode or region name (e.g., 3550)"
+            placeholderTextColor="#aeaeae" 
             value={searchQuery}
             onChangeText={setSearchQuery}
             keyboardType="number-pad"
           />
           <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-            <IconSymbol name="magnifyingglass" size={20} color="white" />
+            <FontAwesome name="search" size={20} color="white" />
           </TouchableOpacity>
         </View>
       </View>
