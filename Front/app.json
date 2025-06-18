@@ -18,7 +18,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.whmate",
+      "bundleIdentifier": "com.sarahinaus.whmate",
       "config": {
         "googleMapsApiKey": "AIzaSyDed2M3tbN3wVTD4kcW2KTtwlgY4lZf-kg"
       },

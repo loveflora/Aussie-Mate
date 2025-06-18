@@ -836,7 +836,7 @@ export default function PostcodeFinderScreen() {
           </Text>
         </Text>
         
-   {/* ------- Contact section ------- */}
+   {/* ------- Disclaimer section ------- */}
    <View style={styles.contactSection}>
           <Text style={styles.contactTitle}>Disclaimer</Text>
           <Text style={styles.contactText}>
@@ -858,10 +858,15 @@ export default function PostcodeFinderScreen() {
             onPress={() => Linking.openURL('mailto:kshhhh0640@gmail.com?subject=Feedback')}
           >
             <Text style={styles.emailLink}>kshhhh0640@gmail.com</Text>
-          </TouchableOpacity>
-          
 
+            <Text style={styles.privacyLink} onPress={() => Linking.openURL('https://www.freeprivacypolicy.com/live/d082fabb-af9f-43e3-b685-88588f31752a')}>Privacy Policy
+            </Text>
+          </TouchableOpacity>
         </View>
+
+
+
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -1045,6 +1050,12 @@ paddingBottom: 10,
   emailLink: {
     fontSize: 14,
     color: '#007AFF',
+    textDecorationLine: 'underline',
+    marginBottom: 8,
+  },
+  privacyLink: {
+    fontSize: 14,
+    color: '#ababab',
     textDecorationLine: 'underline',
     marginBottom: 8,
   },

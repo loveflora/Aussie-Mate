@@ -25,7 +25,10 @@
   "submit": {
     "production": {
       "ios": {
-        "ascAppId": "6747383780"
+        "ascAppId": "6747383780",
+        "appleId": "love7620640@naver.com",
+        "appleTeamId": "UCZ84JV2WL",
+        "sku": "com.sarahinaus.whmate"
       }
     }
   }
