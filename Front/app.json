@@ -23,7 +23,7 @@
         "googleMapsApiKey": "AIzaSyDed2M3tbN3wVTD4kcW2KTtwlgY4lZf-kg"
       },
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "이 앱은 당신의 위치를 지도에 표시하기 위해 위치 정보를 사용합니다.",
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to display your current position on the map and to identify nearby WHV 417/491 visa-eligible areas.\nFor example: finding WHV-eligible postcodes near your current location or checking whether your residential area qualifies for the visa.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
