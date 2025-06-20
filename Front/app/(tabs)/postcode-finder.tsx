@@ -144,7 +144,7 @@ const SAMPLE_POSTCODES = [
     eligible: true
   },
   { 
-    postcode: '3844', 
+    postcode: '3825', 
     name: 'Moe',
     coordinates: { latitude: -38.1723, longitude: 146.2680 },
     eligible: true
