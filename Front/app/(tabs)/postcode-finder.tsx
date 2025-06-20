@@ -156,12 +156,6 @@ const SAMPLE_POSTCODES = [
     eligible: true
   },
   { 
-    postcode: '3875', 
-    name: 'Lakes Entrance',
-    coordinates: { latitude: -37.8815, longitude: 147.9926 },
-    eligible: true
-  },
-  { 
     postcode: '3690', 
     name: 'Wodonga',
     coordinates: { latitude: -36.1214, longitude: 146.8881 },
