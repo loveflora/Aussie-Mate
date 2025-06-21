@@ -401,7 +401,7 @@ export default function PostcodeFinderScreen() {
   const handleSearch = () => {
     // 우편번호로 검색
     if (searchQuery.trim() === '') {
-      Alert.alert('Search error', 'Please enter a postcode or region name');
+      Alert.alert('Search error', 'Please enter a postcode');
       return;
     }
 
@@ -480,7 +480,7 @@ export default function PostcodeFinderScreen() {
         
         Alert.alert(`Postcode ${postcode} Eligibility`, message);
       } else {
-        Alert.alert('No search results', 'Please try searching with a different postcode or region name.');
+        Alert.alert('No search results', 'Please try searching with a different postcode.');
       }
     }
   };
@@ -769,7 +769,7 @@ export default function PostcodeFinderScreen() {
         <View style={styles.searchRow}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Enter postcode or region name (e.g., 3550)"
+            placeholder="Enter postcode (e.g., 3550)"
             placeholderTextColor="#aeaeae" 
             value={searchQuery}
             onChangeText={setSearchQuery}

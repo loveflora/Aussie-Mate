@@ -15,6 +15,11 @@ export default {
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "extra": {
+      "eas": {
+        "projectId": "3c348dbb-1fbd-424e-b5a3-624692c34542"
+      }
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sarahinaus.whmate",
