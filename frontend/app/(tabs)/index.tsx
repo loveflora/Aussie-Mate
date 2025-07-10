@@ -1,15 +1,89 @@
-import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { View, Text } from 'react-native';
-import React from 'react';
+import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import PostcodeFinderScreen from './postcode-finder';
+import { Linking } from 'react-native';
 
 export default function HomeScreen() {
+  const [activeScreen, setActiveScreen] = useState('postcodeFinder');
+
+  const renderScreen = () => {
+    switch (activeScreen) {
+      case 'postcodeFinder':
+        return <PostcodeFinderScreen />;
+      default:
+        return <PostcodeFinderScreen />;
+    }
+  };
 
   return (
-   <PostcodeFinderScreen/>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>AussieMate</Text>
+        <Text style={styles.welcomeText}>호주에서의 생활을 더 쉽게</Text>
+      </View>
+
+      <View style={styles.menuContainer}>
+        <TouchableOpacity 
+          style={[styles.menuItem, activeScreen === 'postcodeFinder' && styles.activeMenuItem]} 
+          onPress={() => setActiveScreen('postcodeFinder')}
+        >
+          <Text style={styles.menuText}>비자 우편번호</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.menuItem} 
+          onPress={() => router.push('/jobs')}
+        >
+          <Text style={styles.menuText}>구직 정보</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.menuItem} 
+          onPress={() => router.push('/housing')}
+        >
+          <Text style={styles.menuText}>주거 정보</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.menuItem} 
+          onPress={() => router.push('/community')}
+        >
+          <Text style={styles.menuText}>커뮤니티</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.screenContainer}>
+        {renderScreen()}
+      </View>
+
+      <View style={styles.footerContainer}>
+        <Text style={styles.footerTitle}>추가 정보</Text>
+        <TouchableOpacity 
+          style={styles.linkItem}
+          onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/work-holiday-417')}
+        >
+          <Text style={styles.linkText}>• WHV 417 비자 정보 보기</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.linkItem}
+          onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491')}
+        >
+          <Text style={styles.linkText}>• 491 비자 정보 보기</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.contactItem}
+          onPress={() => Linking.openURL('mailto:support@whmate.com.au?subject=WHMate App 문의')}
+        >
+          <Text style={styles.contactText}>문의하기: support@whmate.com.au</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -21,6 +95,8 @@ const styles = StyleSheet.create({
   header: {
     padding: 16,
     backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   welcomeText: {
     fontSize: 16,
@@ -31,167 +107,56 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 4,
   },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  progressCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  progressTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  progressTextRow: {
+  menuContainer: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 8,
-  },
-  progressDays: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  progressTotal: {
-    fontSize: 16,
-    color: '#666',
-    marginLeft: 6,
-  },
-  progressBarContainer: {
-    height: 8,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 4,
-    marginBottom: 8,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  progressRemaining: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
-  },
-  progressButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
+    backgroundColor: '#fff',
     paddingVertical: 10,
-    alignItems: 'center',
-  },
-  progressButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  featuresGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  featureCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    width: '48%',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  featureTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  featureDescription: {
-    fontSize: 12,
-    color: '#666',
-    lineHeight: 16,
-  },
-  activitySection: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  activityItem: {
-    flexDirection: 'row',
-    paddingVertical: 12,
+    paddingHorizontal: 5,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#eee',
   },
-  activityIcon: {
-    marginRight: 12,
+  menuItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginHorizontal: 2,
   },
-  activityContent: {
+  activeMenuItem: {
+    backgroundColor: '#f0f0f0',
+  },
+  menuText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  screenContainer: {
     flex: 1,
   },
-  activityText: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  activityTime: {
-    fontSize: 12,
-    color: '#999',
-  },
-  viewMoreButton: {
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  viewMoreText: {
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+  footerContainer: {
     padding: 16,
-    marginBottom: 24,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
   },
-  infoTitle: {
+  footerTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     marginBottom: 8,
   },
-  infoText: {
+  linkItem: {
+    paddingVertical: 6,
+  },
+  linkText: {
+    color: '#0066cc',
     fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
+  },
+  contactItem: {
+    marginTop: 8,
+    paddingVertical: 6,
+  },
+  contactText: {
+    color: '#0066cc',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });

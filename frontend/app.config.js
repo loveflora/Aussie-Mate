@@ -2,12 +2,12 @@ import 'dotenv/config';
 
 export default {
   "expo": {
-    "name": "WHMate",
-    "slug": "WHMate",
+    "name": "AussieMate",
+    "slug": "aussiemate",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "whmate",
+    "scheme": "aussiemate",
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": ["**/*"],
     "splash": {
@@ -18,11 +18,12 @@ export default {
     "extra": {
       "eas": {
         "projectId": "3c348dbb-1fbd-424e-b5a3-624692c34542"
-      }
+      },
+      "apiUrl": "http://10.0.2.2:5000/api" // Android Emulator 용
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sarahinaus.whmate",
+      "bundleIdentifier": "com.sarahinaus.aussiemate",
       "config": {
         "googleMapsApiKey": process.env.GOOGLE_MAPS_IOS_API_KEY
       }
@@ -32,7 +33,7 @@ export default {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.sarahinaus.whmate",
+      "package": "com.sarahinaus.aussiemate",
       "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
       "config": {
         "googleMaps": {
