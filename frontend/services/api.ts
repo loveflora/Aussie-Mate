@@ -3,57 +3,69 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-// 개발 환경에서의 API URL 설정
-// 환경에 따라 적절한 URL 사용
-let API_URL = '';
-
-// 플랫폼에 따라 적절한 URL 설정
-if (Platform.OS === 'web') {
-  // 웹에서는 상대 경로 사용 가능
-  API_URL = '/api';
-} else if (Platform.OS === 'android') {
-  if (Constants.expoConfig?.extra?.apiUrl) {
-    // app.config.js에 설정된 URL 사용
-    API_URL = Constants.expoConfig?.extra?.apiUrl;
-  } else {
-    // Android 에뮬레이터 기본 설정
-    API_URL = 'http://10.0.2.2:5000/api';
+// API base URL configuration based on platform
+const getBaseUrl = (): string => {
+  // Use environment variable if available
+  if (process.env.EXPO_PUBLIC_API_URL) {
+     return process.env.EXPO_PUBLIC_API_URL || 'http://192.168.20.5:5001/api';
   }
-} else if (Platform.OS === 'ios') {
-  if (Constants.expoConfig?.extra?.apiUrl) {
-    // app.config.js에 설정된 URL 사용
-    API_URL = Constants.expoConfig?.extra?.apiUrl;
-  } else {
-    // iOS 시뮬레이터 기본 설정
-    API_URL = 'http://localhost:5000/api';
+  
+  // 기본 포트
+  let port = 5001; // 서버가 5001 포트에서 실행 중
+  
+  // 개발 환경에서만 실행됨
+  if (__DEV__) {
+    console.log('백엔드가 포트 5001을 사용 중입니다.');
   }
+  
+  // Platform-specific defaults
+  if (Platform.OS === 'web') {
+    // For web, use relative URL
+    return '/api'; // 웹에서는 상대 경로 사용
+  } else if (Platform.OS === 'android') {
+    // For Android emulator, 10.0.2.2 points to the host's localhost
+    return `http://10.0.2.2:${port}/api`; // /api 경로 다시 추가
+  } else if (Platform.OS === 'ios') {
+    // For iOS simulator, localhost points to the device itself
+    return `http://192.168.20.5:${port}/api`; // /api 경로 다시 추가
+  } else {
+  // Default fallback - can be configured based on your network
+  return `http://192.168.20.5:${port}/api`; // /api 경로 다시 추가
 }
+};
 
-// 여기에서 실제 컴퓨터의 IP 주소로 직접 설정할 수 있습니다
-// 아래 주석을 해제하고 실제 IP 주소로 변경하세요
-// API_URL = 'http://YOUR_ACTUAL_IP:5000/api';  // YOUR_ACTUAL_IP를 실제 IP 주소로 변경하세요
-
-console.log('사용 중인 API URL:', API_URL);
+console.log('사용 중인 API URL:', getBaseUrl());
 
 // axios 인스턴스 생성
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: getBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 30000, // 타임아웃 30초로 늘림
 });
 
-// 인터셉터로 모든 요청에 토큰 추가
+// 디버깅용 완전한 URL 로깅
 api.interceptors.request.use(
   async (config) => {
     const token = await SecureStore.getItemAsync('token');
+    
+    // 완전한 URL 출력 (디버깅용)
+    const fullUrl = `${config.baseURL}${config.url}`;
+    console.log('API 요청 인터셉터:', config.url);
+    console.log('완전한 요청 URL:', fullUrl);
+    console.log('인증 토큰 있음:', !!token);
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      // 인증 토큰이 없으면 헤더에서 Authorization 제거
+      delete config.headers.Authorization;
     }
     return config;
   },
   (error) => {
+    console.log('API 요청 인터셉터 에러:', error);
     return Promise.reject(error);
   }
 );
@@ -61,9 +73,28 @@ api.interceptors.request.use(
 // 응답 인터셉터
 api.interceptors.response.use(
   (response) => {
+    console.log('API 응답 성공:', response.config.url);
     return response;
   },
   (error) => {
+    console.log('API 응답 에러:', error.config?.url, error.code, error.message);
+    
+    // axios 에러인 경우 자세한 정보 로깅
+    if (error.isAxiosError) {
+      console.log('상세 에러 정보:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        config: {
+          baseURL: error.config?.baseURL,
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        }
+      });
+    }
+    
     // 401 에러 처리 (인증 만료)
     if (error.response && error.response.status === 401) {
       // 로그아웃 로직 추가 가능

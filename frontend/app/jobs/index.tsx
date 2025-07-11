@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -7,12 +7,20 @@ import {
   TouchableOpacity, 
   TextInput,
   ActivityIndicator,
-  Image
+  Image,
+  Alert,
+  Animated,
+  Dimensions,
+  ScrollView,
+  Modal
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { 
+  SafeAreaView 
+} from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { jobApi } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
 
 type JobPost = {
   id: string;
@@ -39,6 +47,78 @@ export default function JobsScreen() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   
+  // 로그인 상태 확인
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const checkLoginStatus = async () => {
+    try {
+      const token = await SecureStore.getItemAsync('token');
+      setIsLoggedIn(!!token);
+    } catch (error) {
+      console.error('로그인 상태 확인 오류:', error);
+      setIsLoggedIn(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 로그인 상태 확인
+  useEffect(() => {
+    checkLoginStatus();
+  }, []);
+
+  // 사이드바 상태
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const slideAnim = useRef(new Animated.Value(300)).current;
+
+  // 사이드바 열기/닫기 애니메이션
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: sidebarVisible ? 0 : 300,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [sidebarVisible, slideAnim]);
+
+  const openSidebar = () => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+    setSidebarVisible(true);
+  };
+
+  const closeSidebar = () => {
+    Animated.timing(slideAnim, {
+      toValue: 300,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setSidebarVisible(false);
+    });
+  };
+
+  const handleLogout = async () => {
+    try {
+      await SecureStore.deleteItemAsync('token');
+      await SecureStore.deleteItemAsync('user');
+      setIsLoggedIn(false);
+      Alert.alert('로그아웃', '로그아웃 되었습니다.');
+      closeSidebar();
+    } catch (error) {
+      console.error('로그아웃 오류:', error);
+      Alert.alert('오류', '로그아웃 처리 중 문제가 발생했습니다.');
+    }
+  };
+
+  const handleLogin = () => {
+    router.push('/login');
+    closeSidebar();
+  };
+
+  const handleSignup = () => {
+    router.push('/signup');
+    closeSidebar();
+  };
+  
   const fetchJobs = async (reset = false) => {
     try {
       if (reset) {
@@ -52,10 +132,13 @@ export default function JobsScreen() {
       if (searchQuery.trim()) {
         response = await jobApi.searchJobs(searchQuery, filters, currentPage, 10);
       } else {
+        console.log('모든 작업 가져오기 시도:', currentPage);
         response = await jobApi.getAllJobs(filters, currentPage, 10);
       }
       
-      const newJobs = response.data.data;
+      // 안전하게 데이터 꺼내기 (빈 배열 기본값 지정)
+      const newJobs = response?.data?.data ?? [];
+
       
       if (reset) {
         setJobs(newJobs);
@@ -153,8 +236,191 @@ export default function JobsScreen() {
         options={{
           headerTitle: '구직 정보',
           headerShown: true,
+          headerLeft: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={() => {
+                  router.push('/');
+                }}
+              >
+                <Ionicons name="chevron-back" size={24} color="#333" />
+   
+              </TouchableOpacity>
+            </View>
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity style={styles.menuButton} onPress={openSidebar}>
+                <Ionicons name="menu-outline" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+          ),
         }}
       />
+      
+      {/* 사이드바 */}
+      <Animated.View 
+        style={[
+          styles.sidebar,
+          { transform: [{ translateX: slideAnim }] }
+        ]}
+      >
+        <View style={styles.sidebarHeader}>
+          <Text style={styles.sidebarTitle}>AussieMate</Text>
+          <TouchableOpacity onPress={closeSidebar}>
+            <Ionicons name="close" size={24} color="#333" />
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.sidebarContent}>
+          {isLoggedIn ? (
+            <>
+              <TouchableOpacity style={styles.sidebarButton} onPress={handleLogout}>
+                <Ionicons name="log-out-outline" size={20} color="#fff" />
+                <Text style={styles.sidebarButtonText}>로그아웃</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity style={styles.sidebarButton} onPress={handleLogin}>
+                <Ionicons name="log-in-outline" size={20} color="#fff" />
+                <Text style={styles.sidebarButtonText}>로그인</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.sidebarButtonSecondary} onPress={handleSignup}>
+                <Ionicons name="person-add-outline" size={20} color="#0066cc" />
+                <Text style={styles.sidebarButtonTextSecondary}>회원가입</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* 메인 메뉴 섹션 */}
+          <Text style={styles.sidebarSectionTitle}>메인 메뉴</Text>
+          <TouchableOpacity 
+            style={styles.sidebarMenuItem}
+            onPress={() => {
+              router.replace('/');
+              closeSidebar();
+            }}
+          >
+            <Ionicons name="home-outline" size={20} color="#333" />
+            <Text style={styles.sidebarMenuItemText}>홈</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.sidebarMenuItem, styles.sidebarMenuItemActive]}
+            onPress={() => {
+              router.replace('/jobs');
+              closeSidebar();
+            }}
+          >
+            <Ionicons name="briefcase-outline" size={20} color="#0066cc" />
+            <Text style={[styles.sidebarMenuItemText, styles.sidebarMenuItemTextActive]}>구직 정보</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.sidebarMenuItem}
+            onPress={() => {
+              router.replace('/housing');
+              closeSidebar();
+            }}
+          >
+            <Ionicons name="home-outline" size={20} color="#333" />
+            <Text style={styles.sidebarMenuItemText}>주거 정보</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.sidebarMenuItem}
+            onPress={() => {
+              router.replace('/community');
+              closeSidebar();
+            }}
+          >
+            <Ionicons name="people-outline" size={20} color="#333" />
+            <Text style={styles.sidebarMenuItemText}>커뮤니티</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.sidebarMenuItem}
+            onPress={() => {
+              router.replace('/profile');
+              closeSidebar();
+            }}
+          >
+            <Ionicons name="person-outline" size={20} color="#333" />
+            <Text style={styles.sidebarMenuItemText}>프로필</Text>
+          </TouchableOpacity>
+
+          {/* 카테고리 메뉴 섹션 */}
+          <Text style={styles.sidebarSectionTitle}>카테고리 메뉴</Text>
+          <TouchableOpacity 
+            style={styles.sidebarMenuItem}
+            onPress={() => {
+              router.push('/news');
+              closeSidebar();
+            }}
+          >
+            <Ionicons name="newspaper-outline" size={20} color="#333" />
+            <Text style={styles.sidebarMenuItemText}>최근 소식</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.sidebarMenuItem}
+            onPress={() => {
+              router.push('/questions');
+              closeSidebar();
+            }}
+          >
+            <Ionicons name="help-circle-outline" size={20} color="#333" />
+            <Text style={styles.sidebarMenuItemText}>질문 게시판</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.sidebarMenuItem}
+            onPress={() => {
+              router.push('/info');
+              closeSidebar();
+            }}
+          >
+            <Ionicons name="information-circle-outline" size={20} color="#333" />
+            <Text style={styles.sidebarMenuItemText}>유용한 정보</Text>
+          </TouchableOpacity>
+          
+          {/* 설정 메뉴 섹션 */}
+          <Text style={styles.sidebarSectionTitle}>설정</Text>
+          <TouchableOpacity 
+            style={styles.sidebarMenuItem}
+            onPress={() => {
+              router.push('/settings');
+              closeSidebar();
+            }}
+          >
+            <Ionicons name="settings-outline" size={20} color="#333" />
+            <Text style={styles.sidebarMenuItemText}>앱 설정</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.sidebarMenuItem}
+            onPress={() => {
+              router.push('/help');
+              closeSidebar();
+            }}
+          >
+            <Ionicons name="help-outline" size={20} color="#333" />
+            <Text style={styles.sidebarMenuItemText}>도움말</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+      
+      {/* 사이드바가 열릴 때 배경을 어둡게 */}
+      {sidebarVisible && (
+        <TouchableOpacity 
+          style={styles.sidebarOverlay} 
+          activeOpacity={1} 
+          onPress={closeSidebar}
+        />
+      )}
       
       <View style={styles.searchContainer}>
         <TextInput
@@ -169,6 +435,7 @@ export default function JobsScreen() {
           <Ionicons name="search" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
+      
       
       <View style={styles.filtersContainer}>
         <ScrollableFilter
@@ -220,7 +487,22 @@ export default function JobsScreen() {
           
           <TouchableOpacity
             style={styles.floatingButton}
-            onPress={() => router.push('/jobs/create')}
+            onPress={async () => {
+              try {
+                const token = await SecureStore.getItemAsync('token');
+                if (token) {
+                  router.push('/jobs/create');
+                } else {
+                  router.push({
+                    pathname: '/login',
+                    params: { returnTo: '/jobs/create' }
+                  });
+                }
+              } catch (error) {
+                console.error('인증 확인 오류:', error);
+                router.push('/login');
+              }
+            }}
           >
             <Ionicons name="add" size={24} color="#fff" />
           </TouchableOpacity>
@@ -275,6 +557,116 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f8f8',
   },
+  menuButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  backButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  sidebar: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 280,
+    height: '100%',
+    backgroundColor: 'white',
+    zIndex: 100,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: -2, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    paddingTop: 30,
+  },
+  sidebarOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 99,
+  },
+  sidebarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  sidebarTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0066cc',
+  },
+  sidebarContent: {
+    padding: 20,
+  },
+  sidebarButton: {
+    backgroundColor: '#0066cc',
+    padding: 14,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 15,
+  },
+  sidebarButtonSecondary: {
+    backgroundColor: '#f1f1f1',
+    padding: 14,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#0066cc',
+  },
+  sidebarButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  sidebarButtonTextSecondary: {
+    color: '#0066cc',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  sidebarSectionTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#888',
+    marginTop: 20,
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingBottom: 5,
+  },
+  sidebarMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 5,
+    borderRadius: 5,
+  },
+  sidebarMenuItemActive: {
+    backgroundColor: '#f0f7ff',
+  },
+  sidebarMenuItemText: {
+    fontSize: 15,
+    color: '#333',
+    marginLeft: 10,
+  },
+  sidebarMenuItemTextActive: {
+    color: '#0066cc',
+    fontWeight: 'bold',
+  },
   searchContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -300,6 +692,40 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  authButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    padding: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  loginButton: {
+    backgroundColor: '#0066cc',
+    padding: 8,
+    borderRadius: 8,
+    marginHorizontal: 4,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  loginButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  logoutButton: {
+    backgroundColor: '#ff3b30',
+    padding: 8,
+    borderRadius: 8,
+    marginHorizontal: 4,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  logoutButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   filtersContainer: {
     paddingVertical: 10,
@@ -392,7 +818,7 @@ const styles = StyleSheet.create({
   floatingButton: {
     position: 'absolute',
     right: 20,
-    bottom: 20,
+    bottom: 80,
     width: 56,
     height: 56,
     borderRadius: 28,

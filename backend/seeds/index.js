@@ -19,16 +19,18 @@ const runSeeds = async () => {
     // await seedOtherData();
     
     console.log('모든 시드 데이터 생성이 완료되었습니다!');
-    process.exit(0);
+    // process.exit(0);
   } catch (error) {
     console.error('시드 데이터 생성 중 오류 발생:', error);
-    process.exit(1);
+    // process.exit(1);
   }
 };
 
 // 스크립트가 직접 실행될 경우에만 시드 함수 실행
 if (require.main === module) {
-  runSeeds();
+  runSeeds()
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
 }
 
 module.exports = runSeeds;

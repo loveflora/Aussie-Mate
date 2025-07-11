@@ -1,15 +1,2 @@
-import { Stack } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-    </Stack>
-  );
-}
+// 이 파일은 루트 _layout.tsx로 대체되었으므로 더 이상 필요하지 않습니다.
+// 하단 탭 네비게이션 제거 작업의 일환으로 삭제되어야 합니다.
