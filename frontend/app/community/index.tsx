@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Image
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { communityApi } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -67,7 +66,7 @@ export default function CommunityScreen() {
         response = await communityApi.getAllPosts(currentPage, 10);
       }
       
-      const newPosts = response.data.data;
+      const newPosts = response.data.data ?? [];
       
       if (reset) {
         setPosts(newPosts);
@@ -220,11 +219,11 @@ export default function CommunityScreen() {
   };
   
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      {/* GlobalHeader만 사용하도록 Stack.Screen 설정 추가 */}
       <Stack.Screen
         options={{
-          headerTitle: '커뮤니티',
-          headerShown: true,
+          headerShown: false, 
         }}
       />
       
@@ -299,7 +298,7 @@ export default function CommunityScreen() {
           </TouchableOpacity>
         </>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

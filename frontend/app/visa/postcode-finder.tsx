@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, Keyboard, TouchableWithoutFeedback, Pressable, Linking, Dimensions, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Polygon, Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { FontAwesome } from '@expo/vector-icons';
 import vicGeoJson from '../../assets/data/vic-postcodes.json';
+import { Stack } from 'expo-router';
 
 // 워홀 417 지역 적격 우편번호 데이터
 const whv417PostcodesRegional = {
@@ -541,8 +541,13 @@ export default function PostcodeFinderScreen() {
 
 
   return (
-    <SafeAreaView style={styles.container}>
-     
+    <View style={styles.container}>
+      {/* Stack.Screen을 항상 렌더링하여 GlobalHeader가 항상 표시되도록 함 */}
+      <Stack.Screen
+        options={{
+          headerShown: false, // GlobalHeader만 사용하도록 설정
+        }}
+      />
       
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -862,7 +867,7 @@ export default function PostcodeFinderScreen() {
 
 
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

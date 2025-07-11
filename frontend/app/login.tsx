@@ -12,7 +12,6 @@ import {
   Platform,
   ScrollView
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { userApi } from '@/services/api';
@@ -94,11 +93,11 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Stack.Screen
         options={{
           title: '로그인',
-          headerShown: true,
+          headerShown: false,
         }}
       />
 
@@ -165,7 +164,7 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Image
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { housingApi } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -61,7 +60,7 @@ export default function HousingScreen() {
         response = await housingApi.getAllHousing(filters, currentPage, 10);
       }
       
-      const newHousings = response.data.data;
+      const newHousings = response.data.data ?? [];
       
       if (reset) {
         setHousings(newHousings);
@@ -197,11 +196,10 @@ export default function HousingScreen() {
   };
   
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Stack.Screen
         options={{
-          headerTitle: '주거 정보',
-          headerShown: true,
+          headerShown: false,
         }}
       />
       
@@ -294,7 +292,7 @@ export default function HousingScreen() {
           </TouchableOpacity>
         </>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

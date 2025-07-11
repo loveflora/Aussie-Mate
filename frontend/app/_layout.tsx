@@ -4,7 +4,7 @@ import { Stack, useRouter, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import React, { useState, useEffect, createContext, useContext } from "react";
-import { StyleSheet, Animated, View, Text, TouchableOpacity, TouchableWithoutFeedback, useColorScheme } from "react-native";
+import { StyleSheet, Animated, View, Text, TouchableOpacity, TouchableWithoutFeedback, useColorScheme, Platform } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
@@ -121,7 +121,16 @@ export default function RootLayout() {
 
   // 현재 경로에 따른 뒤로가기 버튼 표시 여부
   const shouldShowBackButton = () => {
-    const mainRoutes = ['/', '/jobs', '/housing', '/community', '/profile', '/settings'];
+    // 메인 탭 루트 경로들 (뒤로가기 버튼 숨김)
+    const mainRoutes = ['/', '/(tabs)'];
+    
+    // 비자 경로는 항상 뒤로가기 버튼 표시
+    if (pathname.startsWith('/visa')) return true;
+    
+    // 커뮤니티, 구직 등 주요 섹션 루트 페이지에서도 뒤로가기 버튼 표시
+    if (pathname === '/community' || pathname === '/jobs' || pathname === '/housing') return true;
+    
+    // 그 외 경로에 대한 처리
     return !mainRoutes.some(route => pathname === route);
   };
 
@@ -189,16 +198,35 @@ export default function RootLayout() {
     const title = getScreenTitle();
     const showBackButton = shouldShowBackButton();
     const insets = useSafeAreaInsets();
+    
+    // 뒤로가기 핸들러 함수
+    const handleBackPress = () => {
+      // 현재 경로 가져오기
+      const currentRoute = router.canGoBack();
+      const currentPath = router.pathname;
+      
+      // 뒤로 갈 수 없거나 특정 경로인 경우 홈으로 이동
+      if (!currentRoute || currentPath === '/visa/postcode-finder') {
+        router.replace('/');
+      } else {
+        router.back();
+      }
+    };
+    
     return (
-      <View style={[styles.headerContainer, { paddingTop: insets.top || 40 }]}>
+      <View style={[styles.headerContainer, { paddingTop: Platform.OS === 'ios' ? insets.top : StatusBar.currentHeight || 5 }]}>
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
             {showBackButton && (
               <TouchableOpacity 
                 style={styles.headerButton} 
-                onPress={() => router.push('/')}
+                onPress={handleBackPress}
+                hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                activeOpacity={0.6}
               >
-                <Ionicons name="chevron-back" size={24} color="#333" />
+                <View style={styles.backButtonContainer}>
+                  <Ionicons name="chevron-back" size={24} color="#333" />
+                </View>
               </TouchableOpacity>
             )}
           </View>
@@ -208,7 +236,7 @@ export default function RootLayout() {
               style={styles.headerButton} 
               onPress={openSidebar}
             >
-              <Ionicons name="menu-outline" size={24} color="#333" />
+              <Ionicons name="menu-outline" size={28} color="#333" />
             </TouchableOpacity>
           </View>
         </View>
@@ -220,12 +248,14 @@ export default function RootLayout() {
     <>
       <AuthContext.Provider value={{ isLoggedIn, login, logout, checkAuth }}>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
           <GlobalHeader />
           
           <Stack
             screenOptions={{
               headerShown: false, // 모든 화면의 기본 헤더 숨기기
-              animation: 'fade',
+              animation: 'slide_from_right',
+              contentStyle: { backgroundColor: '#f8f8f8', paddingTop: 0 },
             }}
           >
             <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -337,7 +367,7 @@ const styles = StyleSheet.create({
   },
   sidebar: {
     position: 'absolute',
-    top: 0,
+    top: 0, 
     right: 0, 
     width: 280,
     height: '100%',
@@ -348,6 +378,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 20,
+    paddingTop: 40,
+
   },
   headerContainer: {
     backgroundColor: '#fff',
@@ -361,6 +393,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 15,
     height: 50,
+   
   },
   headerLeft: {
     flexDirection: 'row',
@@ -381,6 +414,13 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: 8,
     marginRight: 5,
+    zIndex: 150,
+  },
+  backButtonContainer: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sidebarHeader: {
     paddingVertical: 20,

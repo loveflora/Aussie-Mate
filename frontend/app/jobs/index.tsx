@@ -14,9 +14,6 @@ import {
   ScrollView,
   Modal
 } from 'react-native';
-import { 
-  SafeAreaView 
-} from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { jobApi } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -231,31 +228,10 @@ export default function JobsScreen() {
   };
   
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Stack.Screen
         options={{
-          headerTitle: '구직 정보',
-          headerShown: true,
-          headerLeft: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TouchableOpacity 
-                style={styles.backButton} 
-                onPress={() => {
-                  router.push('/');
-                }}
-              >
-                <Ionicons name="chevron-back" size={24} color="#333" />
-   
-              </TouchableOpacity>
-            </View>
-          ),
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TouchableOpacity style={styles.menuButton} onPress={openSidebar}>
-                <Ionicons name="menu-outline" size={24} color="#333" />
-              </TouchableOpacity>
-            </View>
-          ),
+          headerShown: false, // Stack 헤더를 숨겨 GlobalHeader만 표시
         }}
       />
       
@@ -508,7 +484,7 @@ export default function JobsScreen() {
           </TouchableOpacity>
         </>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
